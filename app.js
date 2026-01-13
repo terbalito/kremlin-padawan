@@ -229,7 +229,9 @@ function showTrainingFeedback() {
     const kwContainer = document.getElementById('train-keywords');
 
     const userText = document.getElementById('train-answer').value;
-    const score = evaluateAnswer(userText, q.motsCles);
+    // const score = evaluateAnswer(userText, q.motsCles);
+    const score = evaluateAnswer(userText, q.motsCles, q.reponse);
+
 
     officialAnswer.textContent = q.reponse;
 
@@ -355,15 +357,18 @@ function renderResults() {
     const container = document.getElementById('results-list');
     container.innerHTML = '';
 
-    // Calcul des scores
+    // Compteurs
     let bonnes = 0, moyennes = 0, mauvaises = 0;
-    let totalScore = 0;
 
+    // On calcule le score pour chaque question
     const scores = State.examQuestions.map((q, idx) => {
-        const userAns = State.userAnswers[idx];
-        const score = evaluateAnswer(userAns, q.motsCles);
-        totalScore += score;
+        const userAns = State.userAnswers[idx];           // réponse de l'utilisateur
+        // const score = evaluateAnswer(userAns, q.motsCles); // score en %
+        const score = evaluateAnswer(userAns, q.motsCles, q.reponse);
 
+        
+
+        // Ici on met la validation des scores
         if (score >= 70) bonnes++;
         else if (score >= 40) moyennes++;
         else mauvaises++;
@@ -371,7 +376,10 @@ function renderResults() {
         return score;
     });
 
-    const pourcentageTotal = Math.round(totalScore / State.examQuestions.length);
+    // Score total
+    const pourcentageTotal = Math.round(scores.reduce((a,b) => a + b, 0) / State.examQuestions.length);
+
+
 
     // Affichage résumé général
     const summaryHTML = `
@@ -413,10 +421,10 @@ function renderResults() {
             <div class="result-header">
                 <div>
                     <strong>Question ${idx + 1}</strong>
-                    <span class="result-badge ${scoreClass}">${score}%</span>
+                    <span class="result-badge ${scoreClass}" data-score>${score}%</span>
                     <p>${q.question}</p>
                 </div>
-                <span>▼</span>
+                <span class="toggle-icon">▼</span>
             </div>
             <div class="result-details">
                 <div class="answer-comparison">
@@ -426,22 +434,25 @@ function renderResults() {
                     </div>
                     <div class="answer-box">
                         <h5>Réponse officielle</h5>
-                        <p>${highlightDifferences(userAns, q.reponse)}</p>
+                        <p>${q.reponse}</p>
                         <div class="keywords-container" style="margin-top:1rem;">
                             ${q.motsCles.map(k => `<span class="keyword-pill">${k}</span>`).join('')}
                         </div>
                     </div>
                 </div>
             </div>
+
         `;
 
         // Toggle détail
         item.querySelector('.result-header').addEventListener('click', () => {
             const details = item.querySelector('.result-details');
+            const icon = item.querySelector('.toggle-icon');
+
             details.classList.toggle('active');
-            item.querySelector('span').textContent =
-                details.classList.contains('active') ? '▲' : '▼';
+            icon.textContent = details.classList.contains('active') ? '▲' : '▼';
         });
+
 
         container.appendChild(item);
     });
@@ -465,33 +476,41 @@ function normalizeText(str) {
 
 
 
-function evaluateAnswer(userText, keywords = []) {
-    if (!userText || keywords.length === 0) return 0;
+function evaluateAnswer(userText, keywords = [], officialAnswer = "") {
+    if (!userText || !userText.trim()) return 0;
 
-    const normalizedAnswer = normalizeText(userText);
+    const normalizedUser = normalizeText(userText);
+    const normalizedOfficial = normalizeText(officialAnswer);
+
+    // 1️⃣ Si la réponse utilisateur == réponse officielle → 100%
+    if (normalizedOfficial && normalizedUser === normalizedOfficial) {
+        return 100;
+    }
+
+    // 2️⃣ Si pas de mots-clés → 100%
+    if (!keywords || keywords.length === 0) return 100;
+
+    // 3️⃣ Matching intelligent des mots-clés
     let hits = 0;
 
-    keywords.forEach(k => {
-        const normalizedKeyword = normalizeText(k);
-        if (normalizedAnswer.includes(normalizedKeyword)) {
+    keywords.forEach(keyword => {
+        const normalizedKeyword = normalizeText(keyword)
+            .replace(/[-]/g, " ")      // non-rétroactivité → non rétroactivité
+            .replace(/\s+/g, " ");     // espaces propres
+
+        if (normalizedUser.includes(normalizedKeyword)) {
             hits++;
         }
     });
 
+    // 4️⃣ Tous les mots-clés présents → 100%
+    if (hits === keywords.length) return 100;
+
+    // 5️⃣ Score proportionnel
     return Math.round((hits / keywords.length) * 100);
 }
-function calculerScore(reponseUtilisateur, keywords) {
-  const texte = reponseUtilisateur.toLowerCase();
-  let matches = 0;
 
-  keywords.forEach(mot => {
-    if (texte.includes(mot.toLowerCase())) {
-      matches++;
-    }
-  });
 
-  return matches / keywords.length;
-}
 
 function highlightDifferences(userText, officialText) {
     const normalizedUser = userText.toLowerCase().split(/\s+/);

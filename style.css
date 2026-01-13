@@ -545,49 +545,77 @@ main {
 }
 
 
-.history-item {
-    padding: 1rem;
-    border-radius: 12px;
-    text-align: center;
-    font-weight: 600;
+/* Résumé des scores - couleurs explicites */
+.history-item.good strong {
+    color: #16a34a; /* vert */
 }
 
-.history-item strong {
-    font-size: 1.4rem;
-    display: block;
+.history-item.average strong {
+    color: #d97706; /* orange */
 }
 
-.history-item small {
-    display: block;
-    opacity: 0.6;
-    margin-top: 0.3rem;
+.history-item.bad strong {
+    color: #dc2626; /* rouge */
 }
 
 .history-item.good {
     background: rgba(22, 163, 74, 0.15);
-    color: #166534;
 }
 
 .history-item.average {
     background: rgba(217, 119, 6, 0.15);
-    color: #92400e;
 }
 
 .history-item.bad {
     background: rgba(220, 38, 38, 0.15);
-    color: #7f1d1d;
 }
 
-.result-item.good {
-    border-left: 6px solid #16a34a;
+/* Dark mode – un peu plus contrasté */
+[data-theme="dark"] .history-item.good {
+    background: rgba(22, 163, 74, 0.25);
 }
 
-.result-item.average {
-    border-left: 6px solid #d97706;
+[data-theme="dark"] .history-item.average {
+    background: rgba(217, 119, 6, 0.25);
 }
 
-.result-item.bad {
-    border-left: 6px solid #dc2626;
+[data-theme="dark"] .history-item.bad {
+    background: rgba(220, 38, 38, 0.25);
 }
 
+.history-summary {
+    background: var(--card-bg, #ffffff);
+    border-radius: 14px;
+    padding: 1.5rem;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+}
 
+.history-summary h2 {
+    margin-bottom: 1rem;
+    color: var(--text-primary, #111);
+    font-weight: 700;
+}
+
+.history-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.75rem 1rem;
+    border-radius: 10px;
+    background: rgba(0,0,0,0.03);
+}
+
+[data-theme="dark"] .history-item {
+    background: rgba(255,255,255,0.06);
+}
+
+.history-item strong {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--text-primary, #111);
+}
+
+.history-item small {
+    opacity: 0.8;
+    font-size: 0.85rem;
+}
