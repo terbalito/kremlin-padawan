@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>LexPrep | Excellence Juridique</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="logo-container">
+                <img src="logo.png" alt="LexPrep Logo" class="logo-img">
+                <span class="brand-name">LexPrep</span>
+            </div>
+            <div class="header-actions">
+                <button id="theme-toggle" class="icon-btn" aria-label="Toggle Theme">
+                    <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                    <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                </button>
+                <button id="data-btn" class="icon-btn" aria-label="Upload Data">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                </button>
+            </div>
+        </header>
+
+        <main id="main-content" class="fade-in">
+            <!-- View: Landing -->
+            <section id="view-landing" class="view active">
+                <div class="hero">
+                    <h1>Préparez votre avenir juridique.</h1>
+                    <p class="subtitle">Entraînez-vous aux questions ouvertes pour le barreau et les concours de magistrature.</p>
+                </div>
+                <div class="mode-selection">
+                    <button class="mode-card" data-mode="training">
+                        <div class="mode-icon">📖</div>
+                        <h3>Mode Entraînement</h3>
+                        <p>Révision libre, correction immédiate et tags de mots-clés.</p>
+                    </button>
+                    <button class="mode-card" data-mode="exam">
+                        <div class="mode-icon">⏳</div>
+                        <h3>Mode Examen</h3>
+                        <p>10 questions, 60 minutes. Simulation réelle sans correction immédiate.</p>
+                    </button>
+                </div>
+                <div id="stats-summary" class="hidden">
+                    <p>Questions chargées : <span id="count-display">0</span></p>
+                </div>
+            </section>
+
+            <!-- View: Upload -->
+            <section id="view-upload" class="view">
+                <div class="card">
+                    <button class="back-link">← Retour</button>
+                    <h2>Importer des données</h2>
+                    <p>Déposez un fichier JSON ou du texte brut extrait par OCR.</p>
+                    <div class="upload-zone" id="drop-zone">
+                        <input type="file" id="file-input" hidden accept=".json,.txt">
+                        <p>Cliquez ou glissez-déposez ici</p>
+                    </div>
+                    <div class="text-import">
+                        <textarea id="raw-text-import" placeholder="Collez votre texte OCR ici... (Format: QUESTION: ... REPONSE: ... MOTS CLES: ...)"></textarea>
+                        <button id="process-text" class="btn btn-primary">Traiter le texte</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- View: Training -->
+            <section id="view-training" class="view">
+                <div class="quiz-container">
+                    <div class="quiz-header">
+                        <button class="back-link">← Quitter</button>
+                        <span class="progress-info">Question <span id="train-current">1</span></span>
+                    </div>
+                    <div class="question-card">
+                        <div id="train-question" class="question-text"></div>
+                        <textarea id="train-answer" placeholder="Votre réponse juridique ici..." class="auto-expand"></textarea>
+                        
+                        <div id="train-feedback" class="feedback-area hidden">
+                            <hr>
+                            <h4>Réponse Officielle</h4>
+                            <div id="train-official-answer" class="official-answer"></div>
+                            <div id="train-keywords" class="keywords-container"></div>
+                        </div>
+
+                        <div class="action-bar">
+                            <button id="train-show-answer" class="btn btn-outline">Voir la réponse</button>
+                            <button id="train-next" class="btn btn-primary hidden">Suivant</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- View: Exam Rules -->
+            <section id="view-exam-rules" class="view">
+                <div class="card centered">
+                    <h2>Prêt pour l'examen ?</h2>
+                    <ul class="rules-list">
+                        <li>10 questions tirées au sort.</li>
+                        <li>60 minutes pour tout compléter.</li>
+                        <li>Aucune correction ne sera affichée avant la fin.</li>
+                        <li>La concentration est de rigueur.</li>
+                    </ul>
+                    <button id="start-exam-btn" class="btn btn-primary btn-large">Commencer la session</button>
+                    <button class="back-link">Annuler</button>
+                </div>
+            </section>
+
+            <!-- View: Exam Session -->
+            <section id="view-exam-session" class="view">
+                <div class="exam-layout">
+                    <aside class="exam-sidebar">
+                        <div class="timer" id="exam-timer">60:00</div>
+                        <div class="exam-nav" id="exam-nav-dots">
+                            <!-- Generated dots -->
+                        </div>
+                        <button id="finish-exam-btn" class="btn btn-danger">Terminer l'examen</button>
+                    </aside>
+                    <div class="exam-main">
+                        <div class="question-card">
+                            <div id="exam-question-text" class="question-text"></div>
+                            <textarea id="exam-answer-input" placeholder="Rédigez votre réponse..." class="auto-expand"></textarea>
+                            <div class="exam-controls">
+                                <button id="exam-prev" class="btn btn-outline">Précédent</button>
+                                <button id="exam-next" class="btn btn-outline">Suivant</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- View: Results -->
+            <section id="view-results" class="view">
+                <div class="results-container">
+                    <h2>Bilan de la session</h2>
+                    <p class="subtitle">Relisez vos réponses et comparez-les aux versions officielles.</p>
+                    <div id="results-list" class="results-list">
+                        <!-- Generated list -->
+                    </div>
+                    <button class="back-link btn btn-primary">Retour à l'accueil</button>
+                </div>
+            </section>
+        </main>
+
+        <!-- Toast Notifications -->
+        <div id="toast" class="toast hidden"></div>
+    </div>
+
+    <script type="module" src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+[
+  {
+    "id": 1,
+    "question": "Quelles sont les conditions de formation d'un contrat de travail selon la jurisprudence de la Cour de cassation ?",
+    "reponse": "Le contrat de travail suppose la réunion de trois éléments cumulatifs : une prestation de travail, une rémunération (salaire), et un lien de subordination juridique. Ce dernier est l'élément déterminant, caractérisé par l'exécution d'un travail sous l'autorité d'un employeur qui a le pouvoir de donner des ordres, d'en contrôler l'exécution et de sanctionner les manquements.",
+    "motsCles": ["lien de subordination", "prestation de travail", "rémunération", "pouvoir de direction", "pouvoir disciplinaire"]
+  },
+  {
+    "id": 2,
+    "question": "Définissez le principe de légalité des délits et des peines en droit pénal.",
+    "reponse": "Issu de l'article 8 de la DDHC et de l'article 111-3 du Code pénal, ce principe signifie que nul ne peut être puni pour un crime ou un délit dont les éléments ne sont pas définis par la loi. Il impose la clarté et la précision des textes pénaux, interdit l'analogie défavorable au prévenu et fonde la règle de l'interprétation stricte de la loi pénale.",
+    "motsCles": ["non-rétroactivité", "interprétation stricte", "clarté de la loi", "nemo crimen", "nulla poena sine lege"]
+  },
+  {
+    "id": 3,
+    "question": "Quelles sont les caractéristiques du droit de propriété selon le Code civil ?",
+    "reponse": "Le droit de propriété est défini par l'article 544 du Code civil comme le droit de jouir et disposer des choses de la manière la plus absolue. Ses attributs sont l'usus (usage), le fructus (jouissance des fruits) et l'abusus (disposition). Ses caractères sont l'absolutisme (sous réserve des lois), l'exclusivité et la perpétuité.",
+    "motsCles": ["usus", "fructus", "abusus", "perpétuel", "exclusif", "absolu"]
+  }
+]
