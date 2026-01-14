@@ -476,7 +476,7 @@ function normalizeText(str) {
 
 
 
-function evaluateAnswer(userText, keywords = [], officialAnswer = "") {
+function evaluateAnswer(userText, keywords = [], officialAnswer = "", seuil = 20) {
     if (!userText || !userText.trim()) return 0;
 
     const normalizedUser = normalizeText(userText);
@@ -490,25 +490,25 @@ function evaluateAnswer(userText, keywords = [], officialAnswer = "") {
     // 2️⃣ Si pas de mots-clés → 100%
     if (!keywords || keywords.length === 0) return 100;
 
-    // 3️⃣ Matching intelligent des mots-clés
+    // 3️⃣ Compter les mots-clés trouvés
     let hits = 0;
 
     keywords.forEach(keyword => {
         const normalizedKeyword = normalizeText(keyword)
-            .replace(/[-]/g, " ")      // non-rétroactivité → non rétroactivité
-            .replace(/\s+/g, " ");     // espaces propres
+            .replace(/[-]/g, " ")  // ex: "non-rétroactivité" → "non rétroactivité"
+            .replace(/\s+/g, " "); // nettoyer les espaces multiples
 
-        if (normalizedUser.includes(normalizedKeyword)) {
-            hits++;
-        }
+        if (normalizedUser.includes(normalizedKeyword)) hits++;
     });
 
-    // 4️⃣ Tous les mots-clés présents → 100%
-    if (hits === keywords.length) return 100;
+    // 4️⃣ Si atteint le seuil → 100%
+    if (hits >= seuil) return 100;
 
-    // 5️⃣ Score proportionnel
-    return Math.round((hits / keywords.length) * 100);
+    // 5️⃣ Sinon score proportionnel au seuil
+    return Math.round((hits / seuil) * 100);
 }
+
+
 
 
 
