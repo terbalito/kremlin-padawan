@@ -21,7 +21,8 @@ const views = {
     training: document.getElementById('view-training'),
     examRules: document.getElementById('view-exam-rules'),
     examSession: document.getElementById('view-exam-session'),
-    results: document.getElementById('view-results')
+    results: document.getElementById('view-results'),
+    sessionSetup: document.getElementById('view-session-setup') 
 };
 
 // Initialization
@@ -91,10 +92,11 @@ function setupEventListeners() {
                 navigateTo('upload');
                 return;
             }
-            if (mode === 'training') startTraining();
-            else navigateTo('examRules');
+            // On affiche le setup avant de commencer
+            setupSession(mode);
         });
     });
+
 
     // Upload Data Click
     document.getElementById('data-btn').addEventListener('click', () => navigateTo('upload'));
@@ -131,6 +133,24 @@ function setupEventListeners() {
         });
     });
 }
+
+function setupSession(mode) {
+    State.selectedMode = mode; // On garde le mode choisi
+    navigateTo('sessionSetup');
+
+    document.getElementById('start-session-btn').onclick = () => {
+        const numQuestions = parseInt(document.getElementById('num-questions').value);
+        const timeLimit = parseInt(document.getElementById('time-limit').value);
+
+        if (mode === 'training') startTraining(numQuestions);
+        else startExam(numQuestions, timeLimit);
+    };
+
+
+    // Annuler
+    document.querySelector('#view-session-setup .back-link').onclick = () => navigateTo('landing');
+}
+
 
 // Data Handling
 function handleFileUpload(e) {
@@ -203,15 +223,20 @@ function saveQuestions(newQuestions) {
 }
 
 // Training Mode Logic
-function startTraining() {
+function startTraining(numQuestions = 10) {
+    // Tirage aléatoire des questions pour la session training
+    State.trainingQuestions = [...State.questions].sort(() => Math.random() - 0.5).slice(0, numQuestions);
     State.currentQuestionIndex = 0;
+    State.userAnswers = new Array(State.trainingQuestions.length).fill("");
     navigateTo('training');
     renderTrainingQuestion();
 }
 
+
+
 function renderTrainingQuestion() {
-    const q = State.questions[State.currentQuestionIndex];
-    document.getElementById('train-current').textContent = `${State.currentQuestionIndex + 1} / ${State.questions.length}`;
+    const q = State.trainingQuestions[State.currentQuestionIndex]; // <-- utilise trainingQuestions
+    document.getElementById('train-current').textContent = `${State.currentQuestionIndex + 1} / ${State.trainingQuestions.length}`;
     document.getElementById('train-question').textContent = q.question;
     const answerArea = document.getElementById('train-answer');
     answerArea.value = "";
@@ -222,16 +247,15 @@ function renderTrainingQuestion() {
     document.getElementById('train-next').classList.add('hidden');
 }
 
+
 function showTrainingFeedback() {
-    const q = State.questions[State.currentQuestionIndex];
+    const q = State.trainingQuestions[State.currentQuestionIndex]; // <-- utilise trainingQuestions
     const feedback = document.getElementById('train-feedback');
     const officialAnswer = document.getElementById('train-official-answer');
     const kwContainer = document.getElementById('train-keywords');
 
     const userText = document.getElementById('train-answer').value;
-    // const score = evaluateAnswer(userText, q.motsCles);
     const score = evaluateAnswer(userText, q.motsCles, q.reponse);
-
 
     officialAnswer.textContent = q.reponse;
 
@@ -244,45 +268,54 @@ function showTrainingFeedback() {
     const existing = feedback.querySelector('.result-badge');
     if (existing) existing.remove();
 
-
     officialAnswer.insertAdjacentHTML(
         'beforebegin',
         `<div class="result-badge">${score}% de couverture des mots-clés</div>`
     );
 
     kwContainer.innerHTML = q.motsCles.map(k => `<span class="keyword-pill">${k}</span>`).join('');
-    
+
     feedback.classList.remove('hidden');
     document.getElementById('train-show-answer').classList.add('hidden');
     document.getElementById('train-next').classList.remove('hidden');
 }
 
 function nextTrainingQuestion() {
+    // Sauvegarde réponse utilisateur
+    State.userAnswers[State.currentQuestionIndex] = document.getElementById('train-answer').value;
     State.currentQuestionIndex++;
-    if (State.currentQuestionIndex < State.questions.length) {
+
+    if (State.currentQuestionIndex < State.trainingQuestions.length) {
         renderTrainingQuestion();
     } else {
-        showToast("Bravo ! Vous avez terminé toutes les questions.");
+        // Session terminée
+        const finalScore = calculateFinalScore(State.trainingQuestions, State.userAnswers);
+        showToast(`Session terminée ! Score final : ${finalScore}%`);
         navigateTo('landing');
     }
 }
 
+function calculateFinalScore(questions, userAnswers, seuil = 7) {
+    let totalScore = 0;
+    questions.forEach((q, idx) => {
+        const score = evaluateAnswer(userAnswers[idx] || "", q.motsCles, q.reponse, seuil);
+        totalScore += score;
+    });
+    return Math.round(totalScore / questions.length);
+}
+
 // Exam Mode Logic
-function startExam() {
-    // Select 10 random questions
-    State.examQuestions = [...State.questions]
-        .sort(() => Math.random() - 0.5)
-        .slice(0, 10);
-    
+function startExam(numQuestions = 10, timeLimit = 60) {
+    State.examQuestions = [...State.questions].sort(() => Math.random() - 0.5).slice(0, numQuestions);
     State.userAnswers = new Array(State.examQuestions.length).fill("");
     State.currentQuestionIndex = 0;
-    State.examTimeRemaining = 3600; // 60 mins
-
+    State.examTimeRemaining = timeLimit * 60; // secondes
     navigateTo('examSession');
     renderExamQuestion();
     startExamTimer();
     renderExamDots();
 }
+
 
 function startExamTimer() {
     if (State.examTimerInterval) clearInterval(State.examTimerInterval);
@@ -546,3 +579,4 @@ function playFinishSound() {
         console.warn("Audio Context failed", e);
     }
 }
+
