@@ -237,7 +237,7 @@ function startTraining(numQuestions = 10) {
 function renderTrainingQuestion() {
     const q = State.trainingQuestions[State.currentQuestionIndex]; // <-- utilise trainingQuestions
     document.getElementById('train-current').textContent = `${State.currentQuestionIndex + 1} / ${State.trainingQuestions.length}`;
-    document.getElementById('train-question').textContent = q.question;
+    document.getElementById('train-question').innerHTML = formatTextForHTML(q.question);
     const answerArea = document.getElementById('train-answer');
     answerArea.value = "";
     answerArea.style.height = 'auto';
@@ -246,6 +246,19 @@ function renderTrainingQuestion() {
     document.getElementById('train-show-answer').classList.remove('hidden');
     document.getElementById('train-next').classList.add('hidden');
 }
+
+function formatTextForHTML(text = "") {
+    return text
+        // transforme \\n (texte brut) en vrais \n
+        .replace(/\\n/g, '\n')
+        // transforme \n en <br>
+        .replace(/\n/g, '<br>')
+        // nettoie les doubles <br>
+        .replace(/(<br>\s*){2,}/g, '<br><br>')
+        .trim();
+}
+
+
 
 
 function showTrainingFeedback() {
@@ -257,7 +270,8 @@ function showTrainingFeedback() {
     const userText = document.getElementById('train-answer').value;
     const score = evaluateAnswer(userText, q.motsCles, q.reponse);
 
-    officialAnswer.textContent = q.reponse;
+    officialAnswer.innerHTML = formatTextForHTML(q.reponse);
+
 
     feedback.classList.remove('good', 'average', 'bad');
 
@@ -337,7 +351,7 @@ function startExamTimer() {
 
 function renderExamQuestion() {
     const q = State.examQuestions[State.currentQuestionIndex];
-    document.getElementById('exam-question-text').textContent = q.question;
+    document.getElementById('exam-question-text').innerHTML = formatTextForHTML(q.question);
     const input = document.getElementById('exam-answer-input');
     input.value = State.userAnswers[State.currentQuestionIndex] || "";
     input.style.height = 'auto';
@@ -390,106 +404,101 @@ function renderResults() {
     const container = document.getElementById('results-list');
     container.innerHTML = '';
 
-    // Compteurs
-    let bonnes = 0, moyennes = 0, mauvaises = 0;
+    let bonnes = 0;
+    let mauvaises = 0;
+    let totalScore = 0;
 
-    // On calcule le score pour chaque question
-    const scores = State.examQuestions.map((q, idx) => {
-        const userAns = State.userAnswers[idx];           // réponse de l'utilisateur
-        // const score = evaluateAnswer(userAns, q.motsCles); // score en %
-        const score = evaluateAnswer(userAns, q.motsCles, q.reponse);
+    // 1️⃣ Calcul des scores
+    const details = State.examQuestions.map((q, idx) => {
+        const score = evaluateAnswer(
+            State.userAnswers[idx] || "",
+            q.motsCles,
+            q.reponse
+        );
 
-        
+        totalScore += score;
 
-        // Ici on met la validation des scores
         if (score >= 70) bonnes++;
-        else if (score >= 40) moyennes++;
         else mauvaises++;
 
-        return score;
+        return { q, idx, score };
     });
 
-    // Score total
-    const pourcentageTotal = Math.round(scores.reduce((a,b) => a + b, 0) / State.examQuestions.length);
+    const totalQuestions = State.examQuestions.length;
+    const scoreGlobal = Math.round(totalScore / totalQuestions);
+    const pctBonnes = Math.round((bonnes / totalQuestions) * 100);
+    const pctMauvaises = 100 - pctBonnes;
 
+    // 2️⃣ SCORE GLOBAL (TRÈS VISIBLE)
+    container.insertAdjacentHTML('beforeend', `
+        <div class="exam-score-main">
+            <div class="score-big">${scoreGlobal}%</div>
+            <div class="score-label">Score final</div>
 
+            <div class="score-stats">
+                <div class="stat good">
+                    <strong>${pctBonnes}%</strong>
+                    <span>Bonnes réponses</span>
+                </div>
+                <div class="stat bad">
+                    <strong>${pctMauvaises}%</strong>
+                    <span>Mauvaises réponses</span>
+                </div>
+            </div>
 
-    // Affichage résumé général
-    const summaryHTML = `
-        <div class="history-summary centered" style="margin-bottom:2rem;">
-            <h2>Récapitulatif de l'examen</h2>
-            <div class="history-item good">
-                <strong>${bonnes} / ${State.examQuestions.length}</strong>
-                <small>Bonnes réponses (≥70%)</small>
-            </div>
-            <div class="history-item average">
-                <strong>${moyennes} / ${State.examQuestions.length}</strong>
-                <small>Réponses moyennes (40–69%)</small>
-            </div>
-            <div class="history-item bad">
-                <strong>${mauvaises} / ${State.examQuestions.length}</strong>
-                <small>Mauvaises réponses (<40%)</small>
-            </div>
-            <div class="history-item" style="background:var(--accent);color:white;">
-                <strong>${pourcentageTotal}%</strong>
-                <small>Score total</small>
+            <div class="result-filters">
+                <button data-filter="all">Toutes</button>
+                <button data-filter="good">Réussies</button>
+                <button data-filter="bad">Échouées</button>
             </div>
         </div>
-    `;
+    `);
 
-    container.insertAdjacentHTML('beforeend', summaryHTML);
-
-    // Affichage détaillé question par question
-    State.examQuestions.forEach((q, idx) => {
-        const userAns = State.userAnswers[idx];
-        const score = scores[idx];
-        const scoreClass =
-            score >= 70 ? 'good' :
-            score >= 40 ? 'average' : 'bad';
+    // 3️⃣ FEEDBACK QUESTION PAR QUESTION
+    details.forEach(({ q, idx, score }) => {
+        const cls = score >= 70 ? 'good' : 'bad';
 
         const item = document.createElement('div');
-        item.className = `result-item ${scoreClass}`;
+        item.className = `result-item ${cls}`;
+        item.dataset.type = cls;
 
         item.innerHTML = `
             <div class="result-header">
-                <div>
-                    <strong>Question ${idx + 1}</strong>
-                    <span class="result-badge ${scoreClass}" data-score>${score}%</span>
-                    <p>${q.question}</p>
-                </div>
-                <span class="toggle-icon">▼</span>
-            </div>
-            <div class="result-details">
-                <div class="answer-comparison">
-                    <div class="answer-box">
-                        <h5>Votre réponse</h5>
-                        <p>${userAns || "<em>Aucune réponse fournie</em>"}</p>
-                    </div>
-                    <div class="answer-box">
-                        <h5>Réponse officielle</h5>
-                        <p>${q.reponse}</p>
-                        <div class="keywords-container" style="margin-top:1rem;">
-                            ${q.motsCles.map(k => `<span class="keyword-pill">${k}</span>`).join('')}
-                        </div>
-                    </div>
-                </div>
+                <strong>Question ${idx + 1}</strong>
+                <span class="result-badge">${score}%</span>
             </div>
 
+            <p class="question-text">${formatTextForHTML(q.question)}</p>
+
+            <div class="answer-box">
+                <h5>Votre réponse</h5>
+                <p>${State.userAnswers[idx] || "<em>Aucune réponse</em>"}</p>
+            </div>
+
+            <div class="answer-box official">
+                <h5>Réponse officielle</h5>
+                <p>${formatTextForHTML(q.reponse)}</p>
+            </div>
         `;
-
-        // Toggle détail
-        item.querySelector('.result-header').addEventListener('click', () => {
-            const details = item.querySelector('.result-details');
-            const icon = item.querySelector('.toggle-icon');
-
-            details.classList.toggle('active');
-            icon.textContent = details.classList.contains('active') ? '▲' : '▼';
-        });
-
 
         container.appendChild(item);
     });
+
+    // 4️⃣ FILTRES
+    document.querySelectorAll('.result-filters button').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const filter = btn.dataset.filter;
+
+            document.querySelectorAll('.result-item').forEach(item => {
+                item.style.display =
+                    filter === 'all' || item.dataset.type === filter
+                        ? 'block'
+                        : 'none';
+            });
+        });
+    });
 }
+
 
 
 // Utils
@@ -509,39 +518,62 @@ function normalizeText(str) {
 
 
 
-function evaluateAnswer(userText, keywords = [], officialAnswer = "", seuil = 20) {
+function evaluateAnswer(userText, questionData) {
     if (!userText || !userText.trim()) return 0;
 
-    const normalizedUser = normalizeText(userText);
-    const normalizedOfficial = normalizeText(officialAnswer);
+    const normalize = str =>
+        str.toLowerCase()
+           .normalize("NFD")
+           .replace(/[\u0300-\u036f]/g, "")
+           .replace(/[^a-z\s]/g, "")
+           .replace(/\s+/g, " ")
+           .trim();
 
-    // 1️⃣ Si la réponse utilisateur == réponse officielle → 100%
-    if (normalizedOfficial && normalizedUser === normalizedOfficial) {
-        return 100;
-    }
+    const user = normalize(userText);
 
-    // 2️⃣ Si pas de mots-clés → 100%
-    if (!keywords || keywords.length === 0) return 100;
+    const essentiels = questionData.motsClesEssentiels || questionData.motsCles || [];
+    const secondaires = questionData.motsClesSecondaires || [];
+    const erreursGraves = questionData.erreursGraves || [];
 
-    // 3️⃣ Compter les mots-clés trouvés
-    let hits = 0;
+    let score = 0;
+    let maxScore = 0;
 
-    keywords.forEach(keyword => {
-        const normalizedKeyword = normalizeText(keyword)
-            .replace(/[-]/g, " ")  // ex: "non-rétroactivité" → "non rétroactivité"
-            .replace(/\s+/g, " "); // nettoyer les espaces multiples
-
-        if (normalizedUser.includes(normalizedKeyword)) hits++;
+    // 1️⃣ Concepts essentiels (70%)
+    const poidsEssentiel = 70 / Math.max(essentiels.length, 1);
+    essentiels.forEach(k => {
+        maxScore += poidsEssentiel;
+        if (user.includes(normalize(k))) {
+            score += poidsEssentiel;
+        }
     });
 
-    // 4️⃣ Si atteint le seuil → 100%
-    if (hits >= seuil) return 100;
+    // 2️⃣ Concepts secondaires (30%)
+    const poidsSecondaire = secondaires.length
+        ? 30 / secondaires.length
+        : 0;
 
-    // 5️⃣ Sinon score proportionnel au seuil
-    return Math.round((hits / seuil) * 100);
+    secondaires.forEach(k => {
+        maxScore += poidsSecondaire;
+        if (user.includes(normalize(k))) {
+            score += poidsSecondaire;
+        }
+    });
+
+    // 3️⃣ Détection des erreurs graves (pénalités)
+    erreursGraves.forEach(err => {
+        const detected = err.detect.every(term =>
+            user.includes(normalize(term))
+        );
+        if (detected) {
+            score *= err.penalty;
+        }
+    });
+
+    // 4️⃣ Sécurité
+    score = Math.max(0, Math.min(100, Math.round(score)));
+
+    return score;
 }
-
-
 
 
 

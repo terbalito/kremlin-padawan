@@ -1715,12 +1715,6 @@
     ]
   },
   {
-    "id": 43,
-    "question": "La partie civile qui n'a pas interjeté appel dans le délai légal, peut-elle interjeter appel incident lors de l'instance qui connait de l'appel du prévenu \r\\n?",
-    "reponse": "",
-    "motsCles": []
-  },
-  {
     "id": 44,
     "question": "Que savez-vous de l'autorité de la chose jugée au pénal sur le civil ?",
     "reponse": "L'autorité de la chose jugée au pénal sur le civil veut simplement dire que le juge civil doit regarder comme vrai la décision rendue par une juridiction répressive.",
@@ -2064,7 +2058,7 @@
   {
     "id": 56,
     "question": "Dans quel délai et devant quelle juridiction les décisions du conservateur des titres immobiliers sont-elles attaquées ?",
-    "reponse": "Les décisions du conservateur des titres immobiliers peuvent être attaquées devant le TGI ce la conformément à l'art. 144 du code foncie",
+    "reponse": "Les décisions du conservateur des titres immobiliers peuvent être attaquées devant le TGI ce la conformément à l'art. 144 du code foncier",
     "motsCles": [
       "décisions",
       "conservateur",
@@ -2478,7 +2472,7 @@
   {
     "id": 67,
     "question": "Quelle est en droit congolais la base légale de l'application des principes généraux de droit ?",
-    "reponse": "En droit congolais la base légale des principes généraux de droit c'est le  \\ndécret de l'Administrateur général au Congo du 14 mai 1986. 486)",
+    "reponse": "En droit congolais la base légale des principes généraux de droit c'est le  \\ndécret de l'Administrateur général au Congo du 14 mai 1986. 486",
     "motsCles": [
       "droit",
       "congolais",
