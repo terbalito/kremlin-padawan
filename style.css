@@ -990,6 +990,17 @@ main {
 .view.active { display: block; }
 .hidden { display: none !important; }
 
+.keyword-pill.good {
+    background: rgba(0, 200, 0, 0.15);
+    border: 1px solid rgba(0, 200, 0, 0.4);
+}
+
+.keyword-pill.bad {
+    background: rgba(200, 0, 0, 0.15);
+    border: 1px solid rgba(200, 0, 0, 0.4);
+}
+
+
 /* ============ IMPORTS DE POLICES (à ajouter dans head) ============ */
 /* 
 <link rel="preconnect" href="https://fonts.googleapis.com">

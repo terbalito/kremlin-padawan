@@ -17,13 +17,13 @@ const State = {
 // UI Elements
 const views = {
     landing: document.getElementById('view-landing'),
-    upload: document.getElementById('view-upload'),
     training: document.getElementById('view-training'),
     examRules: document.getElementById('view-exam-rules'),
     examSession: document.getElementById('view-exam-session'),
     results: document.getElementById('view-results'),
-    sessionSetup: document.getElementById('view-session-setup') 
+    sessionSetup: document.getElementById('view-session-setup')
 };
+
 
 // Initialization
 document.addEventListener('DOMContentLoaded', () => {
@@ -42,16 +42,31 @@ function updateThemeIcon() {
     // Icons handle themselves via CSS selector [data-theme]
 }
 
-function loadStoredData() {
-    const stored = localStorage.getItem('lexprep_questions');
-    if (stored) {
-        try {
-            State.questions = JSON.parse(stored);
-        } catch (e) {
-            console.error("Failed to load questions", e);
+async function loadStoredData() {
+    try {
+        console.log("Chargement des questions depuis questions_keywords.json...");
+
+        const response = await fetch('./questions_keywords.json');
+        if (!response.ok) throw new Error("JSON introuvable");
+
+        const data = await response.json();
+
+        if (!data.questions || !Array.isArray(data.questions)) {
+            throw new Error("Format JSON invalide");
         }
+
+        State.questions = data.questions;
+
+        console.log("Questions chargées :", State.questions.length);
+        updateStats();
+
+    } catch (err) {
+        console.error("Erreur chargement questions :", err);
+        showToast("Impossible de charger les questions");
     }
 }
+
+
 
 function updateStats() {
     const display = document.getElementById('count-display');
@@ -66,13 +81,20 @@ function updateStats() {
 
 // Router-ish navigation
 function navigateTo(viewName) {
-    Object.values(views).forEach(v => v.classList.remove('active'));
+    Object.values(views).forEach(v => {
+        if (v) v.classList.remove('active'); // ✅ garde-fou
+    });
+
     if (views[viewName]) {
         views[viewName].classList.add('active');
         State.currentMode = viewName;
+    } else {
+        console.warn(`Vue inconnue : ${viewName}`);
     }
+
     window.scrollTo(0, 0);
 }
+
 
 // Event Listeners
 function setupEventListeners() {
@@ -86,23 +108,17 @@ function setupEventListeners() {
     // Landing Buttons
     document.querySelectorAll('.mode-card').forEach(card => {
         card.addEventListener('click', () => {
-            const mode = card.dataset.mode;
             if (State.questions.length === 0) {
-                showToast("Veuillez d'abord importer des questions.");
-                navigateTo('upload');
+                showToast("Aucune question disponible.");
                 return;
             }
-            // On affiche le setup avant de commencer
+
+            const mode = card.dataset.mode; // ✅ ICI LA CLÉ
             setupSession(mode);
         });
     });
 
 
-    // Upload Data Click
-    document.getElementById('data-btn').addEventListener('click', () => navigateTo('upload'));
-    document.getElementById('drop-zone').addEventListener('click', () => document.getElementById('file-input').click());
-    document.getElementById('file-input').addEventListener('change', handleFileUpload);
-    document.getElementById('process-text').addEventListener('click', handleTextImport);
 
     // Back Buttons
     document.querySelectorAll('.back-link').forEach(btn => {
@@ -152,76 +168,6 @@ function setupSession(mode) {
 }
 
 
-// Data Handling
-function handleFileUpload(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-        const content = event.target.result;
-        if (file.name.endsWith('.json')) {
-            try {
-                const data = JSON.parse(content);
-                saveQuestions(data);
-            } catch (err) {
-                showToast("Erreur lors de la lecture du JSON.");
-            }
-        } else {
-            processRawText(content);
-        }
-    };
-    reader.readAsText(file);
-}
-
-function handleTextImport() {
-    const text = document.getElementById('raw-text-import').value;
-    if (!text.trim()) return;
-    processRawText(text);
-}
-
-function processRawText(text) {
-    // Parsing logic for OCR text
-    // Expected format: QUESTION: text... REPONSE: text... MOTS CLES: word, word
-    const blocks = text.split(/QUESTION:/i).filter(b => b.trim());
-    const parsed = blocks.map((block, index) => {
-        const parts = block.split(/REPONSE:/i);
-        const questionText = parts[0]?.trim();
-        let answerText = "";
-        let keywords = [];
-
-        if (parts[1]) {
-            const answerParts = parts[1].split(/MOTS CLES:|MOTS-CLÉS:/i);
-            answerText = answerParts[0]?.trim();
-            if (answerParts[1]) {
-                keywords = answerParts[1].split(',').map(k => k.trim());
-            }
-        }
-
-        return {
-            id: Date.now() + index,
-            question: questionText,
-            reponse: answerText,
-            motsCles: keywords
-        };
-    }).filter(q => q.question && q.reponse);
-
-    if (parsed.length > 0) {
-        saveQuestions(parsed);
-        document.getElementById('raw-text-import').value = "";
-    } else {
-        showToast("Aucune question valide détectée.");
-    }
-}
-
-function saveQuestions(newQuestions) {
-    State.questions = newQuestions;
-    localStorage.setItem('lexprep_questions', JSON.stringify(State.questions));
-    updateStats();
-    showToast(`${newQuestions.length} questions chargées.`);
-    navigateTo('landing');
-}
-
 // Training Mode Logic
 function startTraining(numQuestions = 10) {
     // Tirage aléatoire des questions pour la session training
@@ -232,19 +178,75 @@ function startTraining(numQuestions = 10) {
     renderTrainingQuestion();
 }
 
+function analyzeAnswer(userText, question) {
+    const normalize = str =>
+        str.toLowerCase()
+           .normalize("NFD")
+           .replace(/[\u0300-\u036f]/g, "")
+           .replace(/\s+/g, " ")
+           .trim();
+
+    const user = normalize(userText);
+
+    let motsCles = question.motsCles || [];
+    motsCles = motsCles.map(k => normalize(k));
+
+    const found = [];
+    const missing = [];
+
+    motsCles.forEach(k => {
+        if (user.includes(k)) found.push(k);
+        else missing.push(k);
+    });
+
+    const pct = motsCles.length ? found.length / motsCles.length : 0;
+
+    let score = 0;
+    if (pct <= 0.5) score = Math.round(pct * 70 / 0.5);
+    else score = Math.round(70 + (pct - 0.5) * 30 / 0.5);
+
+    return {
+        score: Math.min(100, score),
+        found,
+        missing,
+        total: motsCles.length,
+        foundCount: found.length
+    };
+}
 
 
 function renderTrainingQuestion() {
-    const q = State.trainingQuestions[State.currentQuestionIndex]; // <-- utilise trainingQuestions
+    const q = State.trainingQuestions[State.currentQuestionIndex];
+
+    // Générer automatiquement mots-clés si nécessaire
+    if (!q.motsCles || !q.motsCles.length) {
+        let mots = q.reponse
+            .split(/[\s,.;:!?]/)
+            .map(w => normalizeText(w))
+            .filter(Boolean);
+        q.motsCles = [...new Set(mots)];
+    }
+
+    // Mettre à jour le compteur
     document.getElementById('train-current').textContent = `${State.currentQuestionIndex + 1} / ${State.trainingQuestions.length}`;
+
+    // Afficher la question
     document.getElementById('train-question').innerHTML = formatTextForHTML(q.question);
+
+    // Réinitialiser la zone de réponse
     const answerArea = document.getElementById('train-answer');
     answerArea.value = "";
     answerArea.style.height = 'auto';
-    
-    document.getElementById('train-feedback').classList.add('hidden');
+
+    // Réinitialiser feedback et badges précédents
+    const feedback = document.getElementById('train-feedback');
+    feedback.classList.add('hidden');
     document.getElementById('train-show-answer').classList.remove('hidden');
     document.getElementById('train-next').classList.add('hidden');
+    
+    document.getElementById('train-official-answer').innerHTML = '';
+    document.getElementById('train-keywords').innerHTML = '';
+    document.querySelectorAll('.result-badge, .explain-score').forEach(el => el.remove());
 }
 
 function formatTextForHTML(text = "") {
@@ -262,57 +264,96 @@ function formatTextForHTML(text = "") {
 
 
 function showTrainingFeedback() {
-    const q = State.trainingQuestions[State.currentQuestionIndex]; // <-- utilise trainingQuestions
+    const q = State.trainingQuestions[State.currentQuestionIndex];
+    const userText = document.getElementById('train-answer').value;
+
+    const analysis = analyzeAnswer(userText, q);
+
     const feedback = document.getElementById('train-feedback');
     const officialAnswer = document.getElementById('train-official-answer');
     const kwContainer = document.getElementById('train-keywords');
 
-    const userText = document.getElementById('train-answer').value;
-    const score = evaluateAnswer(userText, q.motsCles, q.reponse);
-
+    // Réponse officielle
     officialAnswer.innerHTML = formatTextForHTML(q.reponse);
 
-
+    // Score
     feedback.classList.remove('good', 'average', 'bad');
-
-    if (score >= 70) feedback.classList.add('good');
-    else if (score >= 40) feedback.classList.add('average');
+    if (analysis.score >= 70) feedback.classList.add('good');
+    else if (analysis.score >= 40) feedback.classList.add('average');
     else feedback.classList.add('bad');
 
-    const existing = feedback.querySelector('.result-badge');
-    if (existing) existing.remove();
-
+    // Badge score
     officialAnswer.insertAdjacentHTML(
         'beforebegin',
-        `<div class="result-badge">${score}% de couverture des mots-clés</div>`
+        `
+        <div class="result-badge">${analysis.score}%</div>
+        <div class="explain-score">
+            ${analysis.foundCount} mots-clés trouvés sur ${analysis.total}
+            → ${Math.round((analysis.foundCount / analysis.total) * 100)}%
+            → score final ${analysis.score}%
+        </div>
+        `
     );
 
-    kwContainer.innerHTML = q.motsCles.map(k => `<span class="keyword-pill">${k}</span>`).join('');
+    // Mots-clés
+    const foundHTML = analysis.found.map(k =>
+        `<span class="keyword-pill good">✔ ${k}</span>`
+    ).join('');
+
+    const missingHTML = analysis.missing.map(k =>
+        `<span class="keyword-pill bad">✘ ${k}</span>`
+    ).join('');
+
+    kwContainer.innerHTML = `
+        <div class="kw-section">
+            <strong>Trouvés (${analysis.foundCount}/${analysis.total})</strong>
+            <div class="kw-list">${foundHTML || "<em>Aucun</em>"}</div>
+        </div>
+        <div class="kw-section">
+            <strong>Manquants</strong>
+            <div class="kw-list">${missingHTML || "<em>Aucun</em>"}</div>
+        </div>
+    `;
 
     feedback.classList.remove('hidden');
     document.getElementById('train-show-answer').classList.add('hidden');
     document.getElementById('train-next').classList.remove('hidden');
 }
 
+
+
 function nextTrainingQuestion() {
-    // Sauvegarde réponse utilisateur
-    State.userAnswers[State.currentQuestionIndex] = document.getElementById('train-answer').value;
+    State.userAnswers[State.currentQuestionIndex] =
+        document.getElementById('train-answer').value;
+
     State.currentQuestionIndex++;
 
     if (State.currentQuestionIndex < State.trainingQuestions.length) {
         renderTrainingQuestion();
     } else {
-        // Session terminée
-        const finalScore = calculateFinalScore(State.trainingQuestions, State.userAnswers);
+        let totalFound = 0;
+        let totalKeywords = 0;
+
+        State.trainingQuestions.forEach((q, idx) => {
+            const analysis = analyzeAnswer(State.userAnswers[idx] || "", q);
+            totalFound += analysis.foundCount;
+            totalKeywords += analysis.total;
+        });
+
+        const finalScore = totalKeywords
+            ? Math.round((totalFound / totalKeywords) * 100)
+            : 0;
+
         showToast(`Session terminée ! Score final : ${finalScore}%`);
         navigateTo('landing');
     }
 }
 
+
 function calculateFinalScore(questions, userAnswers, seuil = 7) {
     let totalScore = 0;
     questions.forEach((q, idx) => {
-        const score = evaluateAnswer(userAnswers[idx] || "", q.motsCles, q.reponse, seuil);
+        const score = evaluateAnswer(userAnswers[idx] || "", q);
         totalScore += score;
     });
     return Math.round(totalScore / questions.length);
@@ -410,11 +451,8 @@ function renderResults() {
 
     // 1️⃣ Calcul des scores
     const details = State.examQuestions.map((q, idx) => {
-        const score = evaluateAnswer(
-            State.userAnswers[idx] || "",
-            q.motsCles,
-            q.reponse
-        );
+    const score = evaluateAnswerStrict(State.userAnswers[idx] || "", q);
+    
 
         totalScore += score;
 
@@ -506,7 +544,7 @@ function showToast(msg) {
     const toast = document.getElementById('toast');
     toast.textContent = msg;
     toast.classList.remove('hidden');
-    setTimeout(() => toast.classList.add('hidden'), 3000);
+    setTimeout(() => toast.classList.add('hidden'), 5000);
 }
 
 function normalizeText(str) {
@@ -518,62 +556,53 @@ function normalizeText(str) {
 
 
 
-function evaluateAnswer(userText, questionData) {
+/**
+ * Évalue la réponse de l'utilisateur par rapport aux mots-clés de la réponse officielle
+ * @param {string} userText - texte saisi par l'utilisateur
+ * @param {object} question - objet question { reponse, motsCles }
+ * @returns {number} score en %
+ */
+function evaluateAnswerStrict(userText, question) {
     if (!userText || !userText.trim()) return 0;
+    if (!question.reponse) return 0;
 
     const normalize = str =>
         str.toLowerCase()
            .normalize("NFD")
            .replace(/[\u0300-\u036f]/g, "")
-           .replace(/[^a-z\s]/g, "")
            .replace(/\s+/g, " ")
            .trim();
 
     const user = normalize(userText);
 
-    const essentiels = questionData.motsClesEssentiels || questionData.motsCles || [];
-    const secondaires = questionData.motsClesSecondaires || [];
-    const erreursGraves = questionData.erreursGraves || [];
+    // 1️⃣ générer automatiquement les mots-clés si pas présents
+    let motsCles = question.motsCles;
+    if (!motsCles || !motsCles.length) {
+        motsCles = question.reponse
+            .split(/[\s,.;:!?]/)
+            .map(w => normalize(w))
+            .filter(Boolean);
+        // retirer doublons
+        motsCles = [...new Set(motsCles)];
+    }
 
+    // 2️⃣ compter combien de mots-clés sont présents
+    let found = 0;
+    motsCles.forEach(k => {
+        if (user.includes(k)) found++;
+    });
+
+    const pct = found / motsCles.length; // % de mots-clés présents
+
+    // 3️⃣ mapping linéaire 50% -> 70%, 100% -> 100%
     let score = 0;
-    let maxScore = 0;
+    if (pct <= 0.5) score = Math.round(pct * 70 / 0.5); // de 0% à 50% → 0 à 70%
+    else score = Math.round(70 + (pct - 0.5) * 30 / 0.5); // 50% -> 100%
 
-    // 1️⃣ Concepts essentiels (70%)
-    const poidsEssentiel = 70 / Math.max(essentiels.length, 1);
-    essentiels.forEach(k => {
-        maxScore += poidsEssentiel;
-        if (user.includes(normalize(k))) {
-            score += poidsEssentiel;
-        }
-    });
-
-    // 2️⃣ Concepts secondaires (30%)
-    const poidsSecondaire = secondaires.length
-        ? 30 / secondaires.length
-        : 0;
-
-    secondaires.forEach(k => {
-        maxScore += poidsSecondaire;
-        if (user.includes(normalize(k))) {
-            score += poidsSecondaire;
-        }
-    });
-
-    // 3️⃣ Détection des erreurs graves (pénalités)
-    erreursGraves.forEach(err => {
-        const detected = err.detect.every(term =>
-            user.includes(normalize(term))
-        );
-        if (detected) {
-            score *= err.penalty;
-        }
-    });
-
-    // 4️⃣ Sécurité
-    score = Math.max(0, Math.min(100, Math.round(score)));
-
-    return score;
+    return Math.min(100, score);
 }
+
+
 
 
 
