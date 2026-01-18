@@ -493,7 +493,7 @@ main {
   border-radius: var(--radius-md);
   color: var(--text-primary);
   font-family: 'Inter', sans-serif;
-  font-size: 1.1rem;
+  font-size: 1.rem;
   line-height: 1.6;
   resize: none;
   overflow: hidden;
