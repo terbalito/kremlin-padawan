@@ -471,7 +471,7 @@ main {
   border-radius: var(--radius-lg);
   padding: 3rem;
   /* margin: 2rem 0; */
-  margin: 1rem 10px;
+  margin: 2rem -12px;
   position: relative;
 }
 
@@ -732,6 +732,7 @@ main {
   position: sticky;
   top: 100px;
   height: fit-content;
+  margin: -12px;
 }
 
 .timer {
