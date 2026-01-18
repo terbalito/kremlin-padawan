@@ -190,7 +190,7 @@
         "contrat travail",
         "autorisation maritale",
         "pas besoin",
-        "Code travail",
+        "Code du travail",
         "loi spéciale"
       ]
     },
@@ -294,7 +294,7 @@
     },
     {
       "id": 24,
-      "question": "Contrat d'apprentissage : obligations de l'apprenti et du maître. Que dites-vous de cette situation ?",
+      "question": "Le 14 novembre 2006, Monsieur Jean YEMBE menuisier de son état conclu avec Madame AKATSHI un contrat d'apprentissage dans son atelier de menuiserie. Quelques mois plus tard, alors que AKATSHI devait fêter son 14e anniversaire, elle demande à son cocontractant de lui fabriquer un joli escarbot qu'elle viendrait retirer une semaine après la commende. Furieux, Jean YEMBE lui répondit d'abord qu'il était son maitre, ensuite qu'il devait lui aussi se consacrer à la fête de 15e anniversaire qui aura lieu deux jours après la commende. Que dites-vous de cette situation ?",
       "reponse": "Le contrat d'apprentissage diffère du contrat de travail. Le maître doit enseigner et traiter l'apprenti avec égard. L'apprenti doit se conformer aux ordres du maître. Jean YEMBE doit livrer l'escarbot comme convenu.",
       "motsCles": [
         "contrat apprentissage",
@@ -733,7 +733,7 @@
     },
     {
       "id": 56,
-      "question": "Délai et juridiction pour attaquer les décisions du conservateur des titres immobiliers ?",
+      "question": "Dans quel délai et devant quelle juridiction les décisions du conservateur des titres immobiliers sont-elles attaquées ?",
       "reponse": "Les décisions peuvent être attaquées devant le TGI conformément à l'art. 144 du code foncier.",
       "motsCles": [
         "décisions",
