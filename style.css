@@ -788,8 +788,9 @@ main {
   background: var(--bg-secondary);
   border: 3px solid var(--border-bold);
   border-radius: var(--radius-lg);
-  padding: 2rem;
-  margin-bottom: 1.5rem;
+  padding: 0.5rem;
+  /* margin-bottom: 1.5rem; */
+  margin: -12px -auto 1.5rem;
   transition: all 0.3s ease;
 }
 
