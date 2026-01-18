@@ -29,7 +29,7 @@
     <meta name="twitter:image" content="logo.png">
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Préparation au Barreau de Kinshasa – Entraînement juridique | Joel Moyowabu</title>
+    <title>Préparation au Barreau de Kinshasa – Entraînement juridique pour le barreau de Kinshasa</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -39,13 +39,22 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet"> -->
     <link rel="stylesheet" href="style.css">
+
+    <!-- Favicon classique -->
+    <link rel="icon" href="./logo.png" type="image/png">
+
+    <!-- Favicon pour Apple devices -->
+    <link rel="apple-touch-icon" href="./logo.png">
+
+    <script src="https://unpkg.com/heroicons@2.0.18/outline/24/solid.min.js"></script>
+
 </head>
 <body>
     <div id="app">
         <!-- Header -->
         <header class="app-header">
             <div class="logo-container">
-                <img src="logo.png" alt="LexPrep – Le barreau de Kinshasa" class="logo-img">
+                <img src="logo.png" alt="Le barreau de Kinshasa" class="logo-img">
                 <span class="brand-name">Kremlin - Padawan</span>
             </div>
 
@@ -104,15 +113,29 @@
                 </div>
                 <div class="mode-selection">
                     <button class="mode-card" data-mode="training">
-                        <div class="mode-icon">📖</div>
+                        <div class="mode-icon">
+                            <!-- Livre pour Training -->
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 20l9-5-9-5-9 5 9 5z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 12l9-5-9-5-9 5 9 5z"/>
+                            </svg>
+                        </div>
                         <h3>Mode Entraînement</h3>
                         <p>Révision libre, correction immédiate et tags de mots-clés.</p>
                     </button>
+
                     <button class="mode-card" data-mode="exam">
-                        <div class="mode-icon">⏳</div>
+                        <div class="mode-icon">
+                            <!-- Chronomètre pour Exam -->
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 2a10 10 0 100 20 10 10 0 000-20z"/>
+                            </svg>
+                        </div>
                         <h3>Mode Examen</h3>
                         <p>10 questions, 60 minutes. Simulation réelle sans correction immédiate.</p>
                     </button>
+
                 </div>
                 <div id="stats-summary" class="hidden">
                     <p>Questions chargées : <span id="count-display">0</span></p>

@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://kremlin-padawan.onrender.com/sitemap.xml

@@ -179,31 +179,78 @@ function startTraining(numQuestions = 10) {
 }
 
 function analyzeAnswer(userText, question) {
-    const normalize = str =>
-        str.toLowerCase()
-           .normalize("NFD")
-           .replace(/[\u0300-\u036f]/g, "")
-           .replace(/\s+/g, " ")
-           .trim();
 
-    const user = normalize(userText);
+    // 1️⃣ Stopwords (garde les tiens, j’en réutilise)
+    const stopwords = new Set([
+        "la","le","les", "l'", "c'", "d'", "s'", "t'", "n'", "un","une","des","et","ou","a","à","de","du","dans","sur",
+        "par", "par la", "par le","au","aux","en","que","qui","dont","est","sont","pour","avec",
+        "ce","ces","cet","cette","il","elle","ils","elles","on","nous","vous"
+    ]);
 
-    let motsCles = question.motsCles || [];
-    motsCles = motsCles.map(k => normalize(k));
+    // 2️⃣ Normalisation de base
+    function normalize(str) {
+        return str
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .replace(/[^a-z\s]/g, " ")
+            .replace(/\s+/g, " ")
+            .trim();
+    }
+
+    // 3️⃣ STEMMER FR SIMPLIFIÉ (clé du succès)
+    function stem(word) {
+        const suffixes = [
+            "ations","ation","ements","ement","eurs","eur","euses","euse",
+            "ations","ments","ment","istes","iste",
+            "ations","ables","able","istes","iste",
+            "trices","trice","teurs","teur",
+            "eurs","eur","euses","euse",
+            "ances","ance","ences","ence",
+            "ités","ité",
+            "ifs","ive","ives",
+            "aux","al",
+            "s","es","e", "er","ez","ai","ais","ait","ant","ons","ont","u","us"
+        ];
+
+        for (let suf of suffixes) {
+            if (word.endsWith(suf) && word.length > suf.length + 2) {
+                return word.slice(0, -suf.length);
+            }
+        }
+        return word;
+    }
+
+    // 4️⃣ Tokenisation + racinisation
+    function tokenizeAndStem(str) {
+        return normalize(str)
+            .split(" ")
+            .filter(w => w && !stopwords.has(w))
+            .map(stem);
+    }
+
+    const userWords = tokenizeAndStem(userText);
+
+    // 5️⃣ Mots-clés
+    let motsCles = question.motsCles && question.motsCles.length
+        ? question.motsCles
+        : question.reponse.split(/[\s,.;:!?]/);
 
     const found = [];
     const missing = [];
 
     motsCles.forEach(k => {
-        if (user.includes(k)) found.push(k);
+        const kRoots = tokenizeAndStem(k);
+        const match = kRoots.every(r => userWords.includes(r));
+        if (match) found.push(k);
         else missing.push(k);
     });
 
     const pct = motsCles.length ? found.length / motsCles.length : 0;
 
     let score = 0;
-    if (pct <= 0.5) score = Math.round(pct * 70 / 0.5);
-    else score = Math.round(70 + (pct - 0.5) * 30 / 0.5);
+    if (pct <= 0.5) score = Math.round((pct / 0.5) * 70);
+    else score = Math.round(70 + ((pct - 0.5) / 0.5) * 30);
 
     return {
         score: Math.min(100, score),
@@ -213,6 +260,7 @@ function analyzeAnswer(userText, question) {
         foundCount: found.length
     };
 }
+
 
 
 function renderTrainingQuestion() {
